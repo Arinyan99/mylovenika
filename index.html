@@ -2,13 +2,12 @@
 <html lang="ru">
 <head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Для Ники</title>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap" rel="stylesheet">
     <style>
-        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Comfortaa', cursive; }
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Comfortaa', cursive; touch-action: manipulation; }
         
-        /* Живой фон с сердечками */
         #background {
             position: absolute;
             width: 100%;
@@ -26,7 +25,7 @@
         }
 
         @keyframes float {
-            0% { transform: translateY(100vh) rotate(0deg); opacity: 1; }
+            0% { transform: translateY(110vh) rotate(0deg); opacity: 1; }
             100% { transform: translateY(-10vh) rotate(360deg); opacity: 0; }
         }
 
@@ -34,43 +33,46 @@
         #ballStage { display: none; opacity: 0; transition: opacity 1.5s ease; flex-direction: column; }
         
         #three-container {
-            width: 450px; 
-            height: 450px; 
+            width: 100vw; 
+            height: 60vh; 
             position: relative; 
             cursor: pointer;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
-        /* Стильная рамка для текста */
         #prediction-frame {
             position: absolute;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
-            width: 260px;
-            height: 80px;
-            background: rgba(0, 0, 0, 0.5);
-            backdrop-filter: blur(8px); /* Эффект стекла */
-            border: 2px solid rgba(255, 192, 203, 0.5);
-            border-radius: 15px;
+            width: 85%;
+            max-width: 280px;
+            height: auto;
+            min-height: 70px;
+            background: rgba(0, 0, 0, 0.6);
+            backdrop-filter: blur(10px);
+            border: 2px solid rgba(255, 192, 203, 0.6);
+            border-radius: 20px;
             display: flex;
             justify-content: center;
             align-items: center;
-            padding: 10px;
+            padding: 15px;
             box-sizing: border-box;
-            box-shadow: 0 0 20px rgba(0,0,0,0.3);
+            box-shadow: 0 10px 30px rgba(0,0,0,0.4);
             pointer-events: none;
             z-index: 100;
-            overflow: hidden;
         }
 
         #prediction-text {
             color: #ffffff;
-            font-size: 16px;
+            font-size: clamp(14px, 4vw, 17px);
             text-align: center;
-            line-height: 1.3;
+            line-height: 1.4;
             opacity: 0;
-            transform: translateY(30px);
-            transition: all 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            transform: translateY(20px);
+            transition: all 0.6s ease-out;
         }
 
         #prediction-text.active {
@@ -79,15 +81,16 @@
         }
 
         .hint { 
-            margin-top: 10px; 
+            margin-top: 20px; 
             color: #d63384; 
             font-weight: bold; 
             text-transform: uppercase; 
-            font-size: 14px;
+            font-size: 13px;
             letter-spacing: 1px;
-            background: rgba(255,255,255,0.4);
-            padding: 5px 15px;
-            border-radius: 20px;
+            background: rgba(255,255,255,0.5);
+            padding: 8px 20px;
+            border-radius: 25px;
+            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
     </style>
 </head>
@@ -105,23 +108,22 @@
                 <div id="prediction-text"></div>
             </div>
         </div>
-        <p class="hint">Коснись магии, Никуся</p>
+        <p class="hint">Никуся, нажми на шар</p>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
-        // 1. Создаем фон с сердечками
         function createBackground() {
             const bg = document.getElementById('background');
             const icons = ['❤', '♥', '❣', '💕'];
-            for (let i = 0; i < 20; i++) {
+            for (let i = 0; i < 15; i++) {
                 const heart = document.createElement('div');
                 heart.className = 'floating-heart';
                 heart.innerText = icons[Math.floor(Math.random() * icons.length)];
                 heart.style.left = Math.random() * 100 + 'vw';
-                heart.style.fontSize = (Math.random() * 20 + 10) + 'px';
-                heart.style.animationDuration = (Math.random() * 5 + 5) + 's';
+                heart.style.fontSize = (Math.random() * 20 + 15) + 'px';
+                heart.style.animationDuration = (Math.random() * 7 + 5) + 's';
                 heart.style.animationDelay = (Math.random() * 5) + 's';
                 bg.appendChild(heart);
             }
@@ -141,38 +143,50 @@
             "Никуся, ты бесценна"
         ];
 
-        // --- ЛОГИКА СЕРДЦА ---
+        // --- АДАПТИВНОЕ СЕРДЦЕ ---
         const hCanvas = document.getElementById('heartCanvas');
         const hCtx = hCanvas.getContext('2d');
         let hWidth = hCanvas.width = window.innerWidth;
         let hHeight = hCanvas.height = window.innerHeight;
+
+        // Коэффициент масштаба в зависимости от ширины экрана
+        const scaleBase = Math.min(hWidth, hHeight) / 500;
+        const heartScale = 13 * scaleBase; 
+
         function getHeartPoint(t) {
             let x = 16 * Math.pow(Math.sin(t), 3);
             let y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-            return { x: x * 15, y: -y * 15 };
+            return { x: x * heartScale, y: -y * heartScale };
         }
+
         class Part {
             constructor(t) {
                 this.t = t;
-                this.x = Math.random() * hWidth; this.y = Math.random() * hHeight;
+                this.x = Math.random() * hWidth; 
+                this.y = Math.random() * hHeight;
                 const target = getHeartPoint(this.t);
-                this.targetX = target.x + hWidth / 2; this.targetY = target.y + hHeight / 2;
-                this.speed = 0.02;
+                this.targetX = target.x + hWidth / 2; 
+                this.targetY = target.y + hHeight / 2;
+                this.speed = 0.02 + Math.random() * 0.01;
             }
             update() {
                 this.x += (this.targetX - this.x) * this.speed;
                 this.y += (this.targetY - this.y) * this.speed;
             }
             draw() {
-                hCtx.font = "bold 14px sans-serif"; hCtx.fillStyle = "#ff0000";
+                hCtx.font = `bold ${Math.max(10, 12 * scaleBase)}px sans-serif`; 
+                hCtx.fillStyle = "#ff0000";
+                hCtx.textAlign = "center";
                 hCtx.fillText("Ника, я тебя люблю", this.x, this.y);
             }
         }
+
         const particles = [];
-        for (let i = 0; i < 100; i++) particles.push(new Part((i / 100) * Math.PI * 2));
+        for (let i = 0; i < 90; i++) particles.push(new Part((i / 90) * Math.PI * 2));
+
         function animateHeart() {
             if (document.getElementById('heartStage').style.display === 'none') return;
-            hCtx.clearRect(0,0, hWidth, hHeight);
+            hCtx.clearRect(0, 0, hWidth, hHeight);
             particles.forEach(p => { p.update(); p.draw(); });
             requestAnimationFrame(animateHeart);
         }
@@ -186,21 +200,21 @@
                 document.getElementById('ballStage').style.opacity = '1';
                 init3D();
             }, 1000);
-        }, 4000);
+        }, 4500);
 
         // --- 3D ШАР ---
         function init3D() {
             const container = document.getElementById('three-container');
             const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+            const camera = new THREE.PerspectiveCamera(45, container.clientWidth / container.clientHeight, 0.1, 1000);
             const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(450, 450);
+            renderer.setSize(container.clientWidth, container.clientHeight);
+            renderer.setPixelRatio(window.devicePixelRatio);
             container.appendChild(renderer.domElement);
 
             const ballGroup = new THREE.Group();
-            
-            // Шар
-            const ballGeom = new THREE.SphereGeometry(2, 64, 64);
+            // Чуть уменьшил шар для мобильных (с 2 до 1.7)
+            const ballGeom = new THREE.SphereGeometry(1.7, 64, 64);
             const ballMat = new THREE.MeshPhongMaterial({
                 color: 0x9e001d,
                 specular: 0xffffff,
@@ -209,19 +223,18 @@
             });
             const ball = new THREE.Mesh(ballGeom, ballMat);
             ballGroup.add(ball);
-
             scene.add(ballGroup);
 
             const light = new THREE.PointLight(0xffffff, 1.8);
             light.position.set(5, 5, 5);
             scene.add(light);
-            scene.add(new THREE.AmbientLight(0xffffff, 0.5));
+            scene.add(new THREE.AmbientLight(0xffffff, 0.6));
 
-            camera.position.z = 6;
+            camera.position.z = 5.5;
 
             function animate() {
                 requestAnimationFrame(animate);
-                ballGroup.rotation.y += 0.003;
+                ballGroup.rotation.y += 0.004;
                 renderer.render(scene, camera);
             }
             animate();
@@ -234,7 +247,7 @@
                 function shake() {
                     let elapsed = Date.now() - start;
                     if (elapsed < 600) {
-                        ballGroup.position.x = Math.sin(elapsed * 0.1) * 0.05;
+                        ballGroup.position.x = Math.sin(elapsed * 0.1) * 0.06;
                         requestAnimationFrame(shake);
                     } else {
                         ballGroup.position.x = 0;
@@ -245,6 +258,12 @@
                 shake();
             };
         }
+
+        window.addEventListener('resize', () => {
+            if (document.getElementById('ballStage').style.display === 'flex') {
+                location.reload();
+            }
+        });
     </script>
 </body>
 </html>
