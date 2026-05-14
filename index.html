@@ -148,4 +148,84 @@
             "Никусь, ты самая самая красивая",
             "Дорогая моя Вероника, ты самая лучшая в мире",
             "Никуся, ты сегодня лучше, чем вчера, а завтра будешь лучше, чем сегодня)",
-            "
+            "Ника, ты прям сияешь",
+            "Никуся, лучше тебя никого не бывает",
+            "Улыбайся почаще, моя дорогая",
+            "Никуся, ты самая идеальная в мире",
+            "Никуся, ты прям как космос - это выше небес",
+            "Никуся, ты бесценна"
+        ];
+
+        // --- СЕРДЦЕ ---
+        function getHeartPoint(t) {
+            let x = 16 * Math.pow(Math.sin(t), 3);
+            let y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+            return { x: x * 15, y: -y * 15 };
+        }
+
+        class Particle {
+            constructor(t) {
+                this.t = t;
+                this.x = Math.random() * width;
+                this.y = Math.random() * height;
+                const target = getHeartPoint(this.t);
+                this.targetX = target.x + width / 2;
+                this.targetY = target.y + height / 2;
+                this.speed = 0.01 + Math.random() * 0.02;
+            }
+            update() {
+                this.x += (this.targetX - this.x) * this.speed;
+                this.y += (this.targetY - this.y) * this.speed;
+                this.x += Math.sin(Date.now() * 0.002 + this.t) * 0.3;
+                this.y += Math.cos(Date.now() * 0.002 + this.t) * 0.3;
+            }
+            draw() {
+                ctx.font = "bold 14px sans-serif";
+                ctx.fillStyle = "#ff0000";
+                ctx.textAlign = "center";
+                ctx.fillText("Ника, я тебя люблю", this.x, this.y);
+            }
+        }
+
+        const particles = [];
+        for (let i = 0; i < 100; i++) particles.push(new Particle((i / 100) * Math.PI * 2));
+
+        function animate() {
+            ctx.fillStyle = "#ffc0cb";
+            ctx.fillRect(0, 0, width, height);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animate);
+        }
+        animate();
+
+        // --- ПЕРЕХОД ---
+        setTimeout(() => {
+            const hStage = document.getElementById('heartStage');
+            const bStage = document.getElementById('ballStage');
+            hStage.style.transition = "opacity 1s";
+            hStage.style.opacity = "0";
+            
+            setTimeout(() => {
+                hStage.style.display = "none";
+                bStage.style.display = "flex";
+                setTimeout(() => { bStage.style.opacity = "1"; }, 50);
+            }, 1000);
+        }, 5000);
+
+        // --- ШАР ---
+        function shakeBall() {
+            const textElem = document.getElementById('predictionText');
+            textElem.style.opacity = "0";
+            setTimeout(() => {
+                textElem.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+                textElem.style.opacity = "1";
+            }, 400);
+        }
+
+        window.addEventListener('resize', () => {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+        });
+    </script>
+</body>
+</html>
