@@ -7,59 +7,72 @@
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #ffc0cb; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         #heartStage, #ballStage { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
-        #ballStage { display: none; opacity: 0; transition: opacity 1.5s ease; flex-direction: column; }
+        #ballStage { display: none; opacity: 0; transition: opacity 1.5s ease; }
         
-        #three-container {
-            width: 400px; 
-            height: 400px; 
-            position: relative; 
-            cursor: pointer;
-        }
-
-        /* Контейнер для "облачного" текста */
-        #prediction-overlay {
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            width: 180px;
-            height: 180px;
+        #scene-container {
+            position: relative;
+            width: 800px;
+            height: 600px;
             display: flex;
             justify-content: center;
             align-items: center;
-            pointer-events: none;
+        }
+
+        /* ОБЛАКО: Сверху и справа от шара */
+        #cloud-message {
+            position: absolute;
+            top: 50px;
+            right: 50px;
+            width: 300px;
+            min-height: 150px;
+            background: rgba(255, 255, 255, 0.2);
+            backdrop-filter: blur(15px);
+            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            box-sizing: border-box;
+            box-shadow: 0 0 40px rgba(255, 255, 255, 0.4), inset 0 0 20px rgba(255, 182, 193, 0.5);
+            opacity: 0;
+            transform: scale(0.5) translateY(50px);
+            transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             z-index: 100;
         }
 
+        #cloud-message::after {
+            content: '';
+            position: absolute;
+            bottom: -20px;
+            left: 20px;
+            width: 40px;
+            height: 40px;
+            background: rgba(255, 255, 255, 0.15);
+            backdrop-filter: blur(10px);
+            border-radius: 50%;
+        }
+
+        #cloud-message.visible {
+            opacity: 1;
+            transform: scale(1) translateY(0);
+        }
+
         #prediction-text {
-            color: #fff;
-            font-size: 16px;
+            color: #7d0016;
+            font-size: 18px;
             font-weight: 800;
             text-align: center;
             line-height: 1.4;
-            /* Эффект материализации из тумана */
-            filter: blur(10px);
-            opacity: 0;
-            transform: scale(0.8);
-            transition: all 1.2s cubic-bezier(0.23, 1, 0.32, 1);
-            text-shadow: 0 0 20px rgba(255, 100, 150, 1), 0 0 10px rgba(255, 255, 255, 0.8);
-        }
-
-        /* Когда текст активен */
-        #prediction-text.visible {
-            filter: blur(0px);
-            opacity: 1;
-            transform: scale(1);
         }
 
         .hint { 
-            margin-top: 20px; 
+            position: absolute;
+            bottom: 50px;
             color: #b3001e; 
             font-weight: 900; 
             letter-spacing: 2px; 
             text-transform: uppercase; 
             font-size: 14px;
-            opacity: 0.7;
         }
     </style>
 </head>
@@ -70,12 +83,15 @@
     </div>
 
     <div id="ballStage">
-        <div id="three-container">
-            <div id="prediction-overlay">
-                <div id="prediction-text">Никуся...</div>
+        <div id="scene-container">
+            <div id="three-canvas-container"></div>
+            
+            <div id="cloud-message">
+                <div id="prediction-text">Никуся, нажми на шар...</div>
             </div>
+            
+            <p class="hint">Встряхни шар, чтобы увидеть мысли</p>
         </div>
-        <p class="hint">Встряхни облако судьбы</p>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -94,7 +110,7 @@
             "Никуся, ты бесценна"
         ];
 
-        // --- СЕРДЦЕ (оставляем твой любимый вариант) ---
+        // --- ЛОГИКА СЕРДЦА ---
         const hCanvas = document.getElementById('heartCanvas');
         const hCtx = hCanvas.getContext('2d');
         let hWidth = hCanvas.width = window.innerWidth;
@@ -108,141 +124,3 @@
 
         class Particle {
             constructor(t) {
-                this.t = t;
-                this.x = Math.random() * hWidth;
-                this.y = Math.random() * hHeight;
-                const target = getHeartPoint(this.t);
-                this.targetX = target.x + hWidth / 2;
-                this.targetY = target.y + hHeight / 2;
-                this.speed = 0.01 + Math.random() * 0.02;
-            }
-            update() {
-                this.x += (this.targetX - this.x) * this.speed;
-                this.y += (this.targetY - this.y) * this.speed;
-            }
-            draw() {
-                hCtx.font = "bold 14px sans-serif";
-                hCtx.fillStyle = "#ff0000";
-                hCtx.textAlign = "center";
-                hCtx.fillText("Ника, я тебя люблю", this.x, this.y);
-            }
-        }
-
-        const particles = [];
-        for (let i = 0; i < 100; i++) particles.push(new Particle((i / 100) * Math.PI * 2));
-
-        function animateHeart() {
-            if (document.getElementById('heartStage').style.display === 'none') return;
-            hCtx.fillStyle = "#ffc0cb";
-            hCtx.fillRect(0, 0, hWidth, hHeight);
-            particles.forEach(p => { p.update(); p.draw(); });
-            requestAnimationFrame(animateHeart);
-        }
-        animateHeart();
-
-        setTimeout(() => {
-            const hStage = document.getElementById('heartStage');
-            const bStage = document.getElementById('ballStage');
-            hStage.style.opacity = '0';
-            setTimeout(() => {
-                hStage.style.display = 'none';
-                bStage.style.display = 'flex';
-                setTimeout(() => { bStage.style.opacity = '1'; init3DBall(); }, 50);
-            }, 1000);
-        }, 5000);
-
-        // --- 3D МАГИЯ (Облако и Шар) ---
-        function init3DBall() {
-            const container = document.getElementById('three-container');
-            const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
-            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(400, 400);
-            container.appendChild(renderer.domElement);
-
-            const ballGroup = new THREE.Group();
-            
-            // 1. Стеклянный корпус
-            const bodyGeom = new THREE.SphereGeometry(2, 64, 64);
-            const bodyMat = new THREE.MeshPhongMaterial({
-                color: 0x4a0000,
-                specular: 0xffffff,
-                shininess: 100,
-                transparent: true,
-                opacity: 0.9,
-                emissive: 0x220000
-            });
-            const ballBody = new THREE.Mesh(bodyGeom, bodyMat);
-            ballGroup.add(ballBody);
-
-            // 2. Система частиц (Облако внутри)
-            const cloudGeom = new THREE.BufferGeometry();
-            const cloudCount = 300;
-            const posArray = new Float32Array(cloudCount * 3);
-            for(let i = 0; i < cloudCount * 3; i++) {
-                posArray[i] = (Math.random() - 0.5) * 2.5; // Частицы внутри сферы
-            }
-            cloudGeom.setAttribute('position', new THREE.BufferAttribute(posArray, 3));
-            const cloudMat = new THREE.PointsMaterial({
-                size: 0.05,
-                color: 0xff6496,
-                transparent: true,
-                opacity: 0.6,
-                blending: THREE.AdditiveBlending
-            });
-            const cloud = new THREE.Points(cloudGeom, cloudMat);
-            ballGroup.add(cloud);
-
-            scene.add(ballGroup);
-
-            // Освещение
-            const pLight = new THREE.PointLight(0xffffff, 1.5);
-            pLight.position.set(5, 5, 5);
-            scene.add(pLight);
-            scene.add(new THREE.AmbientLight(0x404040));
-
-            camera.position.z = 7;
-
-            let cloudSpeed = 0.002;
-
-            function animate() {
-                requestAnimationFrame(animate);
-                cloud.rotation.y += cloudSpeed;
-                cloud.rotation.z += cloudSpeed * 0.5;
-                ballGroup.rotation.y += 0.003;
-                renderer.render(scene, camera);
-            }
-            animate();
-
-            // Клик (Тряска + Облако + Текст)
-            container.onclick = () => {
-                const textElem = document.getElementById('prediction-text');
-                textElem.classList.remove('visible');
-                
-                cloudSpeed = 0.05; // Ускоряем облако (эффект встряски)
-                cloudMat.color.setHex(0xffffff); // Облако вспыхивает белым
-
-                let start = Date.now();
-                function shake() {
-                    let elapsed = Date.now() - start;
-                    if (elapsed < 800) {
-                        ballGroup.position.x = Math.sin(elapsed * 0.1) * 0.1;
-                        requestAnimationFrame(shake);
-                    } else {
-                        ballGroup.position.x = 0;
-                        cloudSpeed = 0.002;
-                        cloudMat.color.setHex(0xff6496);
-                        
-                        // Меняем текст и проявляем его как облако
-                        setTimeout(() => {
-                            textElem.innerText = phrases[Math.floor(Math.random() * phrases.length)];
-                            textElem.classList.add('visible');
-                        }, 200);
-                    }
-                }
-                shake();
-            };
-        }
-    </script>
-</body>
-</html>
