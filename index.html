@@ -7,105 +7,170 @@
     <style>
         body { 
             margin: 0; 
-            /* Приятный розовый фон */
             background-color: #ffc0cb; 
             overflow: hidden; 
             display: flex; 
+            flex-direction: column;
             justify-content: center; 
             align-items: center; 
             height: 100vh;
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
         }
-        canvas { display: block; }
+
+        /* Экран с сердцем */
+        #heartStage {
+            position: absolute;
+            transition: opacity 1.5s ease;
+        }
+
+        /* Экран с шаром (скрыт изначально) */
+        #ballStage {
+            display: none;
+            opacity: 0;
+            text-align: center;
+            transition: opacity 1.5s ease;
+        }
+
+        /* Стиль магического шара */
+        .magic-ball {
+            width: 250px;
+            height: 250px;
+            background: radial-gradient(circle at 30% 30%, #ff4d4d, #800000);
+            border-radius: 50%;
+            box-shadow: 0 20px 50px rgba(0,0,0,0.3), inset -10px -10px 50px rgba(0,0,0,0.5);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            position: relative;
+            user-select: none;
+            transition: transform 0.1s;
+        }
+
+        .magic-ball:active { transform: scale(0.95); }
+
+        .ball-window {
+            width: 140px;
+            height: 140px;
+            background: #1a1a1a;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 15px;
+            box-sizing: border-box;
+            border: 4px solid #333;
+        }
+
+        #predictionText {
+            color: #fff;
+            font-size: 14px;
+            font-weight: bold;
+            text-align: center;
+            line-height: 1.2;
+        }
+
+        .hint { margin-top: 20px; color: #d63384; font-weight: bold; }
     </style>
 </head>
 <body>
-    <canvas id="heartCanvas"></canvas>
+
+    <div id="heartStage">
+        <canvas id="heartCanvas"></canvas>
+    </div>
+
+    <div id="ballStage">
+        <div class="magic-ball" onclick="shakeBall()">
+            <div class="ball-window">
+                <div id="predictionText">Нажми на шар...</div>
+            </div>
+        </div>
+        <p class="hint">Никуся, нажми, чтобы получить предсказание</p>
+    </div>
 
     <script>
         const canvas = document.getElementById('heartCanvas');
         const ctx = canvas.getContext('2d');
-
         let width = canvas.width = window.innerWidth;
         let height = canvas.height = window.innerHeight;
 
-        const particles = [];
-        const TEXT = "Ника, я тебя люблю";
-        const particleCount = 100; // Ровно 100 штук, как ты просил
+        const phrases = [
+            "Никусь, ты самая шикарная)",
+            "Никусь, ты самая самая красивая",
+            "Дорогая моя Вероника, ты самая лучшая в мире",
+            "Никуся, ты сегодня лучше, чем вчера, а завтра будешь лучше, чем сегодня)",
+            "Ника, ты прям сияешь",
+            "Никуся, лучше тебя никого не бывает",
+            "Улыбайся почаще, моя дорогая",
+            "Никуся, ты самая идеальная в мире",
+            "Никуся, ты прям как космос - это выше небес",
+            "Никуся, ты бесценна"
+        ];
 
-        // Математика сердца
+        // --- Логика сердца ---
+        const particles = [];
         function getHeartPoint(t) {
             let x = 16 * Math.pow(Math.sin(t), 3);
             let y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-            return { x: x * 15, y: -y * 15 };
+            return { x: x * 12, y: -y * 12 };
         }
 
         class Particle {
             constructor(t) {
                 this.t = t;
-                // Появляются в рандомных местах экрана
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
-                
-                // Конечная точка в форме сердца
+                const offset = (Math.random() - 0.5) * 30;
                 const target = getHeartPoint(this.t);
-                this.targetX = target.x + width / 2;
-                this.targetY = target.y + height / 2;
-                
-                // Плавная скорость
+                this.targetX = target.x + width / 2 + offset;
+                this.targetY = target.y + height / 2 + offset;
                 this.speed = 0.01 + Math.random() * 0.02;
-                this.fontSize = 14; 
             }
-
             update() {
-                // Плавное движение к цели
                 this.x += (this.targetX - this.x) * this.speed;
                 this.y += (this.targetY - this.y) * this.speed;
-
-                // Легкое покачивание, когда они уже встали в форму
-                this.x += Math.sin(Date.now() * 0.002 + this.t) * 0.2;
-                this.y += Math.cos(Date.now() * 0.002 + this.t) * 0.2;
             }
-
             draw() {
-                ctx.font = `bold ${this.fontSize}px sans-serif`;
-                // Красный текст
+                ctx.font = "bold 12px sans-serif";
                 ctx.fillStyle = "#ff0000";
-                ctx.textAlign = "center";
-                ctx.fillText(TEXT, this.x, this.y);
+                ctx.fillText("Ника, я тебя люблю", this.x, this.y);
             }
         }
 
-        // Создаем 100 частиц
-        for (let i = 0; i < particleCount; i++) {
-            particles.push(new Particle((i / particleCount) * Math.PI * 2));
-        }
+        for (let i = 0; i < 100; i++) particles.push(new Particle((i / 100) * Math.PI * 2));
 
-        function animate() {
-            // Очищаем фон под розовый цвет в каждом кадре
+        function animateHeart() {
             ctx.fillStyle = "#ffc0cb";
             ctx.fillRect(0, 0, width, height);
-
-            particles.forEach(p => {
-                p.update();
-                p.draw();
-            });
-
-            requestAnimationFrame(animate);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animateHeart);
         }
+        animateHeart();
 
-        window.addEventListener('resize', () => {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-            // Пересчитываем центровку при повороте экрана
-            particles.forEach((p, i) => {
-                const target = getHeartPoint((i / particleCount) * Math.PI * 2);
-                p.targetX = target.x + width / 2;
-                p.targetY = target.y + height / 2;
-            });
-        });
+        // --- ПЕРЕХОД К ШАРУ через 4 секунды ---
+        setTimeout(() => {
+            const hStage = document.getElementById('heartStage');
+            const bStage = document.getElementById('ballStage');
+            
+            hStage.style.opacity = '0';
+            setTimeout(() => {
+                hStage.style.display = 'none';
+                bStage.style.display = 'block';
+                setTimeout(() => { bStage.style.opacity = '1'; }, 50);
+            }, 1500);
+        }, 4000);
 
-        animate();
+        // --- Логика шара ---
+        function shakeBall() {
+            const textElem = document.getElementById('predictionText');
+            textElem.style.opacity = '0';
+            
+            setTimeout(() => {
+                const randomPhrase = phrases[Math.floor(Math.random() * phrases.length)];
+                textElem.innerText = randomPhrase;
+                textElem.style.opacity = '1';
+            }, 300);
+        }
     </script>
 </body>
 </html>
