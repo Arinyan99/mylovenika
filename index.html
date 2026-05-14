@@ -5,182 +5,54 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Для Ники</title>
     <style>
-        body, html {
-            margin: 0;
-            padding: 0;
-            width: 100%;
-            height: 100%;
-            background-color: #ffc0cb;
-            overflow: hidden;
-            font-family: 'Segoe UI', Tahoma, sans-serif;
+        body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #ffc0cb; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
+        #heartStage, #ballStage { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+        #ballStage { display: none; opacity: 0; transition: opacity 1.5s ease; flex-direction: column; }
+        canvas { display: block; }
+        
+        #prediction-container {
+            position: absolute;
+            width: 160px;
+            height: 160px;
+            pointer-events: none;
             display: flex;
             justify-content: center;
             align-items: center;
-        }
-
-        #stage-container {
-            position: relative;
-            width: 100vw;
-            height: 100vh;
-        }
-
-        canvas {
-            display: block;
-            position: absolute;
-            top: 0;
-            left: 0;
-        }
-
-        #ball-ui {
-            display: none;
-            position: absolute;
-            top: 50%;
-            left: 50%;
-            transform: translate(-50%, -50%);
-            z-index: 100;
-            text-align: center;
-            opacity: 0;
-            transition: opacity 1.5s ease;
-        }
-
-        /* Оболочка для анимации тряски */
-        .shake-wrapper {
-            position: relative;
-            width: 350px;
-            height: 350px;
-            cursor: pointer;
-            user-select: none;
-        }
-
-        /* Реалистичный корпус шара */
-        .ball-body {
-            width: 100%;
-            height: 100%;
-            background: radial-gradient(circle at 35% 35%, 
-                #ff7b92 0%, 
-                #e60026 30%, 
-                #8b001a 70%, 
-                #4d000e 100%);
-            border-radius: 50%;
-            box-shadow: 
-                0 60px 100px rgba(0,0,0,0.5), 
-                inset -30px -30px 70px rgba(0,0,0,0.8),
-                inset 25px 25px 60px rgba(255,255,255,0.3);
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            position: relative;
-            overflow: hidden;
-            transition: transform 0.1s ease;
-        }
-
-        /* Стеклянные блики высокого качества */
-        .glare-main {
-            position: absolute;
-            top: 8%;
-            left: 15%;
-            width: 140px;
-            height: 70px;
-            background: linear-gradient(to bottom, rgba(255,255,255,0.5), rgba(255,255,255,0));
-            border-radius: 50%;
-            transform: rotate(-20deg);
-            filter: blur(10px);
-            z-index: 5;
-        }
-
-        .glare-bottom {
-            position: absolute;
-            bottom: 10%;
-            right: 20%;
-            width: 80px;
-            height: 40px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 50%;
-            filter: blur(15px);
-        }
-
-        /* Окошко с эффектом линзы */
-        .ball-window {
-            width: 190px;
-            height: 190px;
-            background: radial-gradient(circle, #222 0%, #000 100%);
-            border-radius: 50%;
-            border: 10px solid #111;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
-            box-shadow: inset 0 0 50px rgba(0,0,0,1);
-            z-index: 4;
-            position: relative;
+            z-index: 10;
         }
 
         #prediction-text {
             color: #ffcad4;
-            font-size: 17px;
+            font-size: 15px;
             font-weight: 800;
             text-align: center;
-            line-height: 1.4;
-            text-shadow: 0 0 12px rgba(255,170,180,0.7);
-            transition: all 0.5s ease;
+            line-height: 1.3;
+            text-shadow: 0 0 10px rgba(255,170,180,0.8);
             opacity: 1;
+            transition: opacity 0.4s ease;
         }
 
-        .hint-text {
-            margin-top: 40px;
-            color: #b3001e;
-            font-size: 14px;
-            font-weight: 900;
-            letter-spacing: 3px;
-            text-transform: uppercase;
-            text-shadow: 1px 1px 0px rgba(255,255,255,0.2);
-            animation: pulse 2s infinite;
-        }
-
-        @keyframes pulse {
-            0%, 100% { opacity: 0.5; transform: scale(1); }
-            50% { opacity: 1; transform: scale(1.05); }
-        }
-
-        /* Анимация тряски шара */
-        .shaking {
-            animation: shake 0.5s cubic-bezier(.36,.07,.19,.97) both;
-        }
-
-        @keyframes shake {
-            10%, 90% { transform: translate3d(-2px, 0, 0) rotate(-1deg); }
-            20%, 80% { transform: translate3d(4px, 0, 0) rotate(2deg); }
-            30%, 50%, 70% { transform: translate3d(-6px, 0, 0) rotate(-3deg); }
-            40%, 60% { transform: translate3d(6px, 0, 0) rotate(3deg); }
-        }
+        .hint { margin-top: 20px; color: #b3001e; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; font-size: 14px; }
     </style>
 </head>
 <body>
 
-    <div id="stage-container">
-        <canvas id="mainCanvas"></canvas>
-
-        <div id="ball-ui">
-            <div class="shake-wrapper" id="ballWrapper" onclick="onShake()">
-                <div class="glare-main"></div>
-                <div class="ball-body">
-                    <div class="ball-window">
-                        <div id="prediction-text">Никуся, нажми...</div>
-                    </div>
-                </div>
-                <div class="glare-bottom"></div>
-            </div>
-            <p class="hint-text">Магический шар судьбы</p>
-        </div>
+    <div id="heartStage">
+        <canvas id="heartCanvas"></canvas>
     </div>
 
-    <script>
-        const canvas = document.getElementById('mainCanvas');
-        const ctx = canvas.getContext('2d');
-        let width, height, particles = [];
-        let heartActive = true;
+    <div id="ballStage">
+        <div id="three-container" style="width: 350px; height: 350px; position: relative; cursor: pointer;">
+            <div id="prediction-container">
+                <div id="prediction-text">Никуся, нажми на шар</div>
+            </div>
+        </div>
+        <p class="hint">Твой магический шар</p>
+    </div>
 
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+
+    <script>
         const phrases = [
             "Никусь, ты самая шикарная)",
             "Никусь, ты самая самая красивая",
@@ -194,133 +66,121 @@
             "Никуся, ты бесценна"
         ];
 
-        // Инициализация размеров
-        function resize() {
-            width = canvas.width = window.innerWidth;
-            height = canvas.height = window.innerHeight;
-        }
+        // --- ЛОГИКА СЕРДЦА (2D) ---
+        const hCanvas = document.getElementById('heartCanvas');
+        const hCtx = hCanvas.getContext('2d');
+        let hWidth = hCanvas.width = window.innerWidth;
+        let hHeight = hCanvas.height = window.innerHeight;
 
-        // Математика сердца (более крупное и плавное)
         function getHeartPoint(t) {
             let x = 16 * Math.pow(Math.sin(t), 3);
             let y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-            return { x: x * 18, y: -y * 18 };
+            return { x: x * 15, y: -y * 15 };
         }
 
-        class HeartParticle {
-            constructor(index) {
-                this.index = index;
-                this.t = (index / 120) * Math.PI * 2;
-                this.reset();
-            }
-
-            reset() {
-                // Появление из случайных сторон
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                
+        class Particle {
+            constructor(t) {
+                this.t = t;
+                this.x = Math.random() * hWidth;
+                this.y = Math.random() * hHeight;
                 const target = getHeartPoint(this.t);
-                this.targetX = target.x + width / 2;
-                this.targetY = target.y + height / 2;
-                
-                this.vx = 0;
-                this.vy = 0;
-                this.accel = 0.005 + Math.random() * 0.01;
-                this.friction = 0.92 + Math.random() * 0.03;
-                this.alpha = 0;
-                this.color = "#ff0000";
+                this.targetX = target.x + hWidth / 2;
+                this.targetY = target.y + hHeight / 2;
+                this.speed = 0.01 + Math.random() * 0.02;
             }
-
             update() {
-                // Физика плавного притяжения
-                let dx = this.targetX - this.x;
-                let dy = this.targetY - this.y;
-                
-                this.vx += dx * this.accel;
-                this.vy += dy * this.accel;
-                
-                this.vx *= this.friction;
-                this.vy *= this.friction;
-                
-                this.x += this.vx;
-                this.y += this.vy;
-
-                if (this.alpha < 1) this.alpha += 0.01;
-                
-                // Легкий дрейф
-                this.x += Math.sin(Date.now() * 0.001 + this.index) * 0.2;
-                this.y += Math.cos(Date.now() * 0.001 + this.index) * 0.2;
+                this.x += (this.targetX - this.x) * this.speed;
+                this.y += (this.targetY - this.y) * this.speed;
             }
-
             draw() {
-                ctx.globalAlpha = this.alpha;
-                ctx.font = `bold 14px 'Segoe UI'`;
-                ctx.fillStyle = this.color;
-                ctx.textAlign = "center";
-                ctx.fillText("Ника, я тебя люблю", this.x, this.y);
+                hCtx.font = "bold 14px sans-serif";
+                hCtx.fillStyle = "#ff0000";
+                hCtx.textAlign = "center";
+                hCtx.fillText("Ника, я тебя люблю", this.x, this.y);
             }
         }
 
-        function initHeart() {
-            particles = [];
-            for (let i = 0; i < 120; i++) {
-                particles.push(new HeartParticle(i));
-            }
+        const particles = [];
+        for (let i = 0; i < 100; i++) particles.push(new Particle((i / 100) * Math.PI * 2));
+
+        function animateHeart() {
+            if (document.getElementById('heartStage').style.display === 'none') return;
+            hCtx.fillStyle = "#ffc0cb";
+            hCtx.fillRect(0, 0, hWidth, hHeight);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animateHeart);
         }
+        animateHeart();
 
-        function loop() {
-            ctx.clearRect(0, 0, width, height);
-            
-            // Фон (оставляем твой розовый)
-            ctx.fillStyle = "#ffc0cb";
-            ctx.fillRect(0, 0, width, height);
-
-            if (heartActive) {
-                particles.forEach(p => {
-                    p.update();
-                    p.draw();
-                });
-            }
-            
-            requestAnimationFrame(loop);
-        }
-
-        // Логика перехода
-        function startTransition() {
+        // --- ПЕРЕХОД ---
+        setTimeout(() => {
+            const hStage = document.getElementById('heartStage');
+            const bStage = document.getElementById('ballStage');
+            hStage.style.opacity = '0';
             setTimeout(() => {
-                heartActive = false; // Останавливаем рендер частиц
-                const ballUI = document.getElementById('ball-ui');
-                ballUI.style.display = 'block';
-                setTimeout(() => {
-                    ballUI.style.opacity = '1';
-                }, 100);
-            }, 5500); // 5.5 секунд на сердце
+                hStage.style.display = 'none';
+                bStage.style.display = 'flex';
+                setTimeout(() => { bStage.style.opacity = '1'; init3DBall(); }, 50);
+            }, 1000);
+        }, 5000);
+
+        // --- ЛОГИКА 3D ШАРА (Three.js) ---
+        function init3DBall() {
+            const container = document.getElementById('three-container');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(350, 350);
+            container.appendChild(renderer.domElement);
+
+            // Создаем геометрию сферы
+            const geometry = new THREE.SphereGeometry(1.5, 64, 64);
+            const material = new THREE.MeshPhongMaterial({
+                color: 0x800000,
+                specular: 0x666666,
+                shininess: 100,
+                transparent: true,
+                opacity: 0.9
+            });
+            const ball = new THREE.Mesh(geometry, material);
+            scene.add(ball);
+
+            // Освещение
+            const light = new THREE.PointLight(0xffffff, 1, 100);
+            light.position.set(5, 5, 5);
+            scene.add(light);
+            scene.add(new THREE.AmbientLight(0x404040));
+
+            camera.position.z = 4;
+
+            function animate() {
+                requestAnimationFrame(animate);
+                ball.rotation.y += 0.005; // Медленное вращение
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // Тряска при клике
+            container.onclick = () => {
+                const textElem = document.getElementById('prediction-text');
+                textElem.style.opacity = '0';
+                
+                // Эффект физической встряски объекта Three.js
+                let startTime = Date.now();
+                function shake() {
+                    let elapsed = Date.now() - startTime;
+                    if (elapsed < 500) {
+                        ball.position.x = Math.sin(elapsed * 0.1) * 0.1;
+                        requestAnimationFrame(shake);
+                    } else {
+                        ball.position.x = 0;
+                        textElem.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+                        textElem.style.opacity = '1';
+                    }
+                }
+                shake();
+            };
         }
-
-        // Логика шара
-        function onShake() {
-            const wrapper = document.getElementById('ballWrapper');
-            const text = document.getElementById('prediction-text');
-            
-            wrapper.classList.add('shaking');
-            text.style.opacity = '0';
-            text.style.transform = 'scale(0.8) blur(5px)';
-
-            setTimeout(() => {
-                wrapper.classList.remove('shaking');
-                const random = phrases[Math.floor(Math.random() * phrases.length)];
-                text.innerText = random;
-                text.style.opacity = '1';
-                text.style.transform = 'scale(1) blur(0px)';
-            }, 600);
-        }
-
-        // Запуск
-        window.addEventListener('resize', resize);
-        resize();
-        initHeart();
-        loop();
-        startTransition();
     </script>
 </body>
 </html>
