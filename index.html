@@ -13,113 +13,109 @@
             justify-content: center; 
             align-items: center; 
             height: 100vh;
-            font-family: 'Segoe UI', Roboto, sans-serif;
+            font-family: 'Segoe UI', sans-serif;
         }
 
-        #heartStage {
+        /* Контейнеры */
+        #heartStage, #ballStage {
             position: absolute;
-            transition: opacity 1s ease-out;
             width: 100%;
             height: 100%;
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
         }
 
         #ballStage {
             display: none;
             opacity: 0;
-            text-align: center;
-            transition: opacity 1.5s ease-in;
-            perspective: 1000px;
+            transition: opacity 1s ease-in;
         }
 
-        /* --- ГИПЕРРЕАЛИСТИЧНЫЙ ШАР --- */
-        .magic-ball {
+        /* ГИПЕРРЕАЛИСТИЧНЫЙ ШАР */
+        .ball-container {
+            position: relative;
             width: 320px;
             height: 320px;
-            /* Сложный градиент для объема */
-            background: radial-gradient(circle at 30% 30%, 
-                #ff5f7e 0%, 
-                #d90429 40%, 
-                #800f2f 85%, 
-                #4a0e0e 100%);
+            animation: levitate 4s ease-in-out infinite;
+        }
+
+        .magic-ball {
+            width: 100%;
+            height: 100%;
+            background: radial-gradient(circle at 35% 35%, 
+                #ff7b92 0%, 
+                #e60026 30%, 
+                #8b001a 70%, 
+                #4d000e 100%);
             border-radius: 50%;
             position: relative;
+            box-shadow: 
+                0 50px 100px rgba(0,0,0,0.5), 
+                inset -25px -25px 60px rgba(0,0,0,0.8),
+                inset 20px 20px 50px rgba(255,255,255,0.3);
             display: flex;
             justify-content: center;
             align-items: center;
             cursor: pointer;
-            box-shadow: 
-                0 40px 80px rgba(0,0,0,0.5), 
-                inset -20px -20px 60px rgba(0,0,0,0.7),
-                inset 20px 20px 40px rgba(255,255,255,0.25);
-            transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            animation: float 4s ease-in-out infinite; /* Эффект левитации */
+            transition: transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            z-index: 2;
         }
 
-        /* Блик сверху для эффекта стекла */
-        .magic-ball::before {
-            content: '';
+        /* Стеклянный блик */
+        .glass-glare {
             position: absolute;
-            top: 15%;
-            left: 20%;
-            width: 80px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.2);
+            top: 10%;
+            left: 15%;
+            width: 120px;
+            height: 60px;
+            background: linear-gradient(to bottom, rgba(255,255,255,0.4), rgba(255,255,255,0));
             border-radius: 50%;
-            filter: blur(10px);
             transform: rotate(-25deg);
+            filter: blur(8px);
+            pointer-events: none;
+            z-index: 3;
         }
 
-        .magic-ball:active { transform: scale(0.9) rotate(5deg); }
+        .magic-ball:active { transform: scale(0.92); }
 
-        /* Внутреннее окошко с эффектом глубины */
         .ball-window {
-            width: 170px;
-            height: 170px;
-            background: #000;
+            width: 180px;
+            height: 180px;
+            background: radial-gradient(circle, #1a1a1a 0%, #000 100%);
             border-radius: 50%;
             display: flex;
             justify-content: center;
             align-items: center;
             padding: 25px;
             box-sizing: border-box;
-            border: 8px solid #1a1a1a;
-            box-shadow: 
-                inset 0 0 30px rgba(0,0,0,1),
-                0 0 15px rgba(255,0,0,0.2);
-            position: relative;
-            overflow: hidden;
+            border: 6px solid #111;
+            box-shadow: inset 0 0 40px rgba(0,0,0,1);
         }
 
-        /* Текст предсказания */
         #predictionText {
             color: #ffcad4;
             font-size: 16px;
-            font-weight: 700;
+            font-weight: bold;
             text-align: center;
             line-height: 1.4;
-            transition: all 0.6s cubic-bezier(0.4, 0, 0.2, 1);
-            text-shadow: 0 0 10px rgba(255, 202, 212, 0.8);
-            opacity: 1;
+            text-shadow: 0 0 10px rgba(255,170,180,0.6);
+            transition: opacity 0.4s;
         }
 
         .hint { 
             margin-top: 40px; 
-            color: #d90429; 
-            font-weight: 800; 
-            letter-spacing: 2px;
+            color: #b3001e; 
+            font-weight: bold; 
             text-transform: uppercase;
-            font-size: 0.9rem;
-            animation: pulseHint 2s infinite;
+            letter-spacing: 2px;
+            font-size: 14px;
         }
 
-        @keyframes float {
+        @keyframes levitate {
             0%, 100% { transform: translateY(0); }
-            50% { transform: translateY(-15px); }
-        }
-
-        @keyframes pulseHint {
-            0%, 100% { opacity: 0.6; }
-            50% { opacity: 1; }
+            50% { transform: translateY(-20px); }
         }
     </style>
 </head>
@@ -130,12 +126,15 @@
     </div>
 
     <div id="ballStage">
-        <div class="magic-ball" onclick="shakeBall()">
-            <div class="ball-window">
-                <div id="predictionText">Никуся, прикоснись к магии...</div>
+        <div class="ball-container">
+            <div class="glass-glare"></div>
+            <div class="magic-ball" onclick="shakeBall()">
+                <div class="ball-window">
+                    <div id="predictionText">Никуся, нажми на шар</div>
+                </div>
             </div>
         </div>
-        <p class="hint">Нажми на шар</p>
+        <p class="hint">Узнай мои мысли о тебе</p>
     </div>
 
     <script>
@@ -149,32 +148,4 @@
             "Никусь, ты самая самая красивая",
             "Дорогая моя Вероника, ты самая лучшая в мире",
             "Никуся, ты сегодня лучше, чем вчера, а завтра будешь лучше, чем сегодня)",
-            "Ника, ты прям сияешь",
-            "Никуся, лучше тебя никого не бывает",
-            "Улыбайся почаще, моя дорогая",
-            "Никуся, ты самая идеальная в мире",
-            "Никуся, ты прям как космос - это выше небес",
-            "Никуся, ты бесценна"
-        ];
-
-        // --- ЛОГИКА СЕРДЦА ---
-        function getHeartPoint(t) {
-            let x = 16 * Math.pow(Math.sin(t), 3);
-            let y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-            return { x: x * 15, y: -y * 15 };
-        }
-
-        class Particle {
-            constructor(t) {
-                this.t = t;
-                this.x = Math.random() * width;
-                this.y = Math.random() * height;
-                const target = getHeartPoint(this.t);
-                this.targetX = target.x + width / 2;
-                this.targetY = target.y + height / 2;
-                this.speed = 0.01 + Math.random() * 0.02;
-            }
-            update() {
-                this.x += (this.targetX - this.x) * this.speed;
-                this.y += (this.targetY - this.y) * this.speed;
-                this.x += Math.sin(Date.now() * 0.002
+            "
