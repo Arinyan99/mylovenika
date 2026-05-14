@@ -7,7 +7,6 @@
     <style>
         body { 
             margin: 0; 
-            /* Приятный розовый фон */
             background-color: #ffc0cb; 
             overflow: hidden; 
             display: flex; 
@@ -31,9 +30,8 @@
 
         const particles = [];
         const TEXT = "Ника, я тебя люблю";
-        const particleCount = 100; // Ровно 100 штук, как ты просил
+        const particleCount = 100; 
 
-        // Математика сердца
         function getHeartPoint(t) {
             let x = 16 * Math.pow(Math.sin(t), 3);
             let y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
@@ -43,46 +41,41 @@
         class Particle {
             constructor(t) {
                 this.t = t;
-                // Появляются в рандомных местах экрана
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
                 
-                // Конечная точка в форме сердца
+                // Рандомный разброс, чтобы не было "под линейку"
+                const offset = (Math.random() - 0.5) * 40; 
                 const target = getHeartPoint(this.t);
-                this.targetX = target.x + width / 2;
-                this.targetY = target.y + height / 2;
                 
-                // Плавная скорость
+                this.targetX = target.x + width / 2 + offset;
+                this.targetY = target.y + height / 2 + offset;
+                
                 this.speed = 0.01 + Math.random() * 0.02;
                 this.fontSize = 14; 
             }
 
             update() {
-                // Плавное движение к цели
                 this.x += (this.targetX - this.x) * this.speed;
                 this.y += (this.targetY - this.y) * this.speed;
 
-                // Легкое покачивание, когда они уже встали в форму
-                this.x += Math.sin(Date.now() * 0.002 + this.t) * 0.2;
-                this.y += Math.cos(Date.now() * 0.002 + this.t) * 0.2;
+                this.x += Math.sin(Date.now() * 0.002 + this.t) * 0.3;
+                this.y += Math.cos(Date.now() * 0.002 + this.t) * 0.3;
             }
 
             draw() {
                 ctx.font = `bold ${this.fontSize}px sans-serif`;
-                // Красный текст
                 ctx.fillStyle = "#ff0000";
                 ctx.textAlign = "center";
                 ctx.fillText(TEXT, this.x, this.y);
             }
         }
 
-        // Создаем 100 частиц
         for (let i = 0; i < particleCount; i++) {
             particles.push(new Particle((i / particleCount) * Math.PI * 2));
         }
 
         function animate() {
-            // Очищаем фон под розовый цвет в каждом кадре
             ctx.fillStyle = "#ffc0cb";
             ctx.fillRect(0, 0, width, height);
 
@@ -97,11 +90,11 @@
         window.addEventListener('resize', () => {
             width = canvas.width = window.innerWidth;
             height = canvas.height = window.innerHeight;
-            // Пересчитываем центровку при повороте экрана
             particles.forEach((p, i) => {
                 const target = getHeartPoint((i / particleCount) * Math.PI * 2);
-                p.targetX = target.x + width / 2;
-                p.targetY = target.y + height / 2;
+                const offset = (Math.random() - 0.5) * 40;
+                p.targetX = target.x + width / 2 + offset;
+                p.targetY = target.y + height / 2 + offset;
             });
         });
 
