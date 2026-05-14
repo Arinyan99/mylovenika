@@ -8,71 +8,45 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #ffc0cb; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         #heartStage, #ballStage { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
         #ballStage { display: none; opacity: 0; transition: opacity 1.5s ease; }
+        #three-container { width: 100vw; height: 100vh; position: relative; cursor: pointer; }
         
-        #scene-container {
-            position: relative;
-            width: 800px;
-            height: 600px;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-        }
-
-        /* ОБЛАКО: Сверху и справа от шара */
-        #cloud-message {
+        /* Текст внутри 3D облака */
+        #prediction-overlay {
             position: absolute;
-            top: 50px;
-            right: 50px;
-            width: 300px;
-            min-height: 150px;
-            background: rgba(255, 255, 255, 0.2);
-            backdrop-filter: blur(15px);
-            border-radius: 50% 50% 50% 50% / 60% 60% 40% 40%;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-            box-sizing: border-box;
-            box-shadow: 0 0 40px rgba(255, 255, 255, 0.4), inset 0 0 20px rgba(255, 182, 193, 0.5);
-            opacity: 0;
-            transform: scale(0.5) translateY(50px);
-            transition: all 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
-            z-index: 100;
-        }
-
-        #cloud-message::after {
-            content: '';
-            position: absolute;
-            bottom: -20px;
-            left: 20px;
-            width: 40px;
-            height: 40px;
-            background: rgba(255, 255, 255, 0.15);
-            backdrop-filter: blur(10px);
-            border-radius: 50%;
-        }
-
-        #cloud-message.visible {
-            opacity: 1;
-            transform: scale(1) translateY(0);
+            top: 25%;
+            left: 65%;
+            transform: translate(-50%, -50%);
+            width: 250px;
+            pointer-events: none;
+            z-index: 10;
         }
 
         #prediction-text {
-            color: #7d0016;
+            color: #004a7c;
             font-size: 18px;
             font-weight: 800;
             text-align: center;
             line-height: 1.4;
+            opacity: 0;
+            filter: blur(10px);
+            transition: all 1.5s ease;
+        }
+
+        #prediction-text.visible {
+            opacity: 1;
+            filter: blur(0px);
         }
 
         .hint { 
             position: absolute;
-            bottom: 50px;
+            bottom: 30px;
+            left: 50%;
+            transform: translateX(-50%);
             color: #b3001e; 
             font-weight: 900; 
-            letter-spacing: 2px; 
             text-transform: uppercase; 
-            font-size: 14px;
+            font-size: 12px;
+            letter-spacing: 2px;
         }
     </style>
 </head>
@@ -83,15 +57,12 @@
     </div>
 
     <div id="ballStage">
-        <div id="scene-container">
-            <div id="three-canvas-container"></div>
-            
-            <div id="cloud-message">
-                <div id="prediction-text">Никуся, нажми на шар...</div>
+        <div id="three-container">
+            <div id="prediction-overlay">
+                <div id="prediction-text">Никуся...</div>
             </div>
-            
-            <p class="hint">Встряхни шар, чтобы увидеть мысли</p>
         </div>
+        <p class="hint">Коснись шара, чтобы увидеть мысли</p>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
@@ -122,7 +93,7 @@
             return { x: x * 15, y: -y * 15 };
         }
 
-        class Particle {
+        class HeartParticle {
             constructor(t) {
                 this.t = t;
                 this.x = Math.random() * hWidth;
@@ -139,13 +110,12 @@
             draw() {
                 hCtx.font = "bold 14px sans-serif";
                 hCtx.fillStyle = "#ff0000";
-                hCtx.textAlign = "center";
                 hCtx.fillText("Ника, я тебя люблю", this.x, this.y);
             }
         }
 
         const particles = [];
-        for (let i = 0; i < 100; i++) particles.push(new Particle((i / 100) * Math.PI * 2));
+        for (let i = 0; i < 100; i++) particles.push(new HeartParticle((i / 100) * Math.PI * 2));
 
         function animateHeart() {
             if (document.getElementById('heartStage').style.display === 'none') return;
@@ -163,69 +133,95 @@
             setTimeout(() => {
                 hStage.style.display = 'none';
                 bStage.style.display = 'flex';
-                setTimeout(() => { bStage.style.opacity = '1'; init3D(); }, 50);
+                setTimeout(() => { bStage.style.opacity = '1'; init3DScene(); }, 50);
             }, 1000);
         }, 5000);
 
-        // --- 3D И ОБЛАКО ---
-        function init3D() {
-            const container = document.getElementById('three-canvas-container');
+        // --- 3D МАГИЯ ---
+        function init3DScene() {
+            const container = document.getElementById('three-container');
             const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+            const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
             const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(400, 400);
+            renderer.setSize(window.innerWidth, window.innerHeight);
             container.appendChild(renderer.domElement);
 
-            // Шар
-            const geometry = new THREE.SphereGeometry(2, 64, 64);
-            const material = new THREE.MeshPhongMaterial({
-                color: 0x900000,
-                specular: 0x666666,
+            // 1. МАГИЧЕСКИЙ ШАР
+            const ballGroup = new THREE.Group();
+            const ballGeom = new THREE.SphereGeometry(1.5, 64, 64);
+            const ballMat = new THREE.MeshPhongMaterial({
+                color: 0x800000,
+                specular: 0xffffff,
                 shininess: 100,
-                emissive: 0x220000
+                emissive: 0x330000
             });
-            const ball = new THREE.Mesh(geometry, material);
-            scene.add(ball);
+            const ball = new THREE.Mesh(ballGeom, ballMat);
+            ballGroup.add(ball);
+            scene.add(ballGroup);
 
-            // Освещение
-            const light = new THREE.PointLight(0xffffff, 1.2);
-            light.position.set(5, 5, 5);
-            scene.add(light);
-            scene.add(new THREE.AmbientLight(0x404040));
+            // 2. 3D ОБЛАКО (Бело-голубое)
+            const cloudGroup = new THREE.Group();
+            const cloudMat = new THREE.MeshLambertMaterial({
+                color: 0xe0f7ff,
+                transparent: true,
+                opacity: 0, // Изначально невидимо
+                emissive: 0x112233
+            });
 
-            camera.position.z = 6;
+            // Создаем форму из сфер
+            const spheres = [
+                { r: 0.8, x: 0, y: 0, z: 0 },
+                { r: 0.6, x: 0.7, y: 0.2, z: 0 },
+                { r: 0.6, x: -0.7, y: 0.1, z: 0 },
+                { r: 0.5, x: 0.3, y: -0.4, z: 0.2 },
+                { r: 0.5, x: -0.4, y: 0.4, z: -0.1 }
+            ];
 
+            spheres.forEach(s => {
+                const g = new THREE.SphereGeometry(s.r, 32, 32);
+                const m = new THREE.Mesh(g, cloudMat);
+                m.position.set(s.x, s.y, s.z);
+                cloudGroup.add(m);
+            });
+
+            cloudGroup.position.set(3, 2, 0); // Справа-сверху
+            cloudGroup.scale.set(0.1, 0.1, 0.1); // Для анимации появления
+            scene.add(cloudGroup);
+
+            // Свет
+            const sun = new THREE.DirectionalLight(0xffffff, 1);
+            sun.position.set(5, 5, 5);
+            scene.add(sun);
+            scene.add(new THREE.AmbientLight(0x404040, 0.8));
+
+            camera.position.z = 8;
+
+            // Анимация
             function animate() {
                 requestAnimationFrame(animate);
-                ball.rotation.y += 0.005;
+                ballGroup.rotation.y += 0.005;
+                
+                // Мягкое покачивание облака
+                cloudGroup.position.y = 2 + Math.sin(Date.now() * 0.001) * 0.1;
+                cloudGroup.position.x = 3 + Math.cos(Date.now() * 0.0015) * 0.05;
+                cloudGroup.rotation.z = Math.sin(Date.now() * 0.0005) * 0.05;
+
                 renderer.render(scene, camera);
             }
             animate();
 
-            // Клик
-            container.style.cursor = "pointer";
+            // Взаимодействие
+            let isAnimating = false;
             container.onclick = () => {
-                const cloud = document.getElementById('cloud-message');
-                const text = document.getElementById('prediction-text');
-                
-                cloud.classList.remove('visible');
-                
-                // Тряска шара
+                if (isAnimating) return;
+                isAnimating = true;
+
+                const textElem = document.getElementById('prediction-text');
+                textElem.classList.remove('visible');
+
+                // 1. Плавная вибрация шара
                 let start = Date.now();
-                function shake() {
+                function shakeBall() {
                     let elapsed = Date.now() - start;
-                    if (elapsed < 500) {
-                        ball.position.x = Math.sin(elapsed * 0.1) * 0.1;
-                        requestAnimationFrame(shake);
-                    } else {
-                        ball.position.x = 0;
-                        text.innerText = phrases[Math.floor(Math.random() * phrases.length)];
-                        cloud.classList.add('visible');
-                    }
-                }
-                shake();
-            };
-        }
-    </script>
-</body>
-</html>
+                    if (elapsed < 1000) {
+                        const intensity = (1000 - elapsed) / 1000;
