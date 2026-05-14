@@ -3,19 +3,19 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Для Ники</title>
+    <title>For Nika</title>
     <style>
         * { margin: 0; padding: 0; box-sizing: border-box; }
         body { 
-            /* Мягкий розово-черный фон */
-            background: radial-gradient(circle, #2b0010 0%, #000 100%); 
+            /* Глубокий черный фон с мягким виниловым свечением */
+            background: radial-gradient(circle, #200005 0%, #000 100%); 
             overflow: hidden; 
             display: flex; 
             align-items: center; 
             justify-content: center; 
             height: 100vh; 
         }
-        canvas { display: block; filter: drop-shadow(0 0 10px rgba(255, 20, 147, 0.5)); }
+        canvas { display: block; }
     </style>
 </head>
 <body>
@@ -25,54 +25,55 @@
         const canvas = document.getElementById("c");
         const ctx = canvas.getContext("2d");
 
-        canvas.width = window.innerWidth;
-        canvas.height = window.innerHeight;
+        function resize() {
+            canvas.width = window.innerWidth;
+            canvas.height = window.innerHeight;
+        }
+
+        window.addEventListener("resize", resize);
+        resize();
 
         let angle = 0;
-        const NUM_STEPS = 100; // Больше шагов = плотнее сердце
-        const SCALE = 15;      // Размер сердца
-        const TEXT = "Ника, я тебя люблю";
+        const NUM_STEPS = 80;  // Оптимальная плотность текста
+        const SCALE = 13;      // Размер сердца под экран телефона
+        const TEXT = "НИКА Я ТЕБЯ ЛЮБЛЮ";
 
         function heartX(t) { return 16 * Math.pow(Math.sin(t), 3); }
         function heartY(t) { return 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t); }
 
         function draw() {
-            // Очищаем экран с небольшим шлейфом
-            ctx.fillStyle = "rgba(0, 0, 0, 0.1)";
+            // Очистка с эффектом затухания для плавности
+            ctx.fillStyle = "rgba(0, 0, 0, 0.15)";
             ctx.fillRect(0, 0, canvas.width, canvas.height);
 
             const cx = canvas.width / 2;
             const cy = canvas.height / 2;
 
-            // Настройка текста
-            ctx.font = "bold 16px 'Segoe UI', Arial, sans-serif";
+            // Стиль текста
+            ctx.font = "bold 14px 'Segoe UI', Arial, sans-serif";
             ctx.textAlign = "center";
             ctx.textBaseline = "middle";
 
             for (let i = 0; i < NUM_STEPS; i++) {
-                const t = (i / NUM_STEPS) * Math.PI * 2 + angle;
-                const x = cx + heartX(t) * SCALE;
-                const y = cy - heartY(t) * SCALE;
+                // Математика твоего кода с добавлением динамики
+                const t = (i / NUM_STEPS) * Math.PI * 2;
+                const x = cx + heartX(t) * SCALE * (1 + Math.sin(angle) * 0.05); // Эффект биения
+                const y = cy - heartY(t) * SCALE * (1 + Math.sin(angle) * 0.05);
 
-                // Делаем цвет переливающимся (от розового к красному)
-                const hue = 340 + Math.sin(angle + i * 0.1) * 20;
+                // Цвет плавно переливается от розового к алому
+                const hue = 345 + Math.sin(angle + i * 0.1) * 15;
                 ctx.fillStyle = `hsl(${hue}, 100%, 60%)`;
                 
-                // Добавляем свечение буквам
-                ctx.shadowBlur = 15;
+                // Неоновое свечение букв
+                ctx.shadowBlur = 12;
                 ctx.shadowColor = `hsl(${hue}, 100%, 50%)`;
 
                 ctx.fillText(TEXT, x, y);
             }
 
-            angle += 0.01; // Скорость вращения/движения
+            angle += 0.03; // Скорость анимации
             requestAnimationFrame(draw);
         }
-
-        window.addEventListener("resize", () => {
-            canvas.width = window.innerWidth;
-            canvas.height = window.innerHeight;
-        });
 
         draw();
     </script>
