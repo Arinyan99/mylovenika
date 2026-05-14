@@ -8,44 +8,36 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #ffc0cb; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         #heartStage, #ballStage { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
         #ballStage { display: none; opacity: 0; transition: opacity 1.5s ease; }
-        #three-container { width: 100vw; height: 100vh; position: relative; cursor: pointer; }
+        canvas { display: block; }
         
-        /* Текст внутри 3D облака */
         #prediction-overlay {
             position: absolute;
-            top: 25%;
-            left: 65%;
-            transform: translate(-50%, -50%);
-            width: 250px;
+            width: 200px;
             pointer-events: none;
-            z-index: 10;
+            z-index: 100;
+            display: flex;
+            justify-content: center;
+            align-items: center;
         }
 
         #prediction-text {
-            color: #004a7c;
-            font-size: 18px;
+            color: #005b96;
+            font-size: 16px;
             font-weight: 800;
             text-align: center;
-            line-height: 1.4;
+            line-height: 1.3;
             opacity: 0;
-            filter: blur(10px);
-            transition: all 1.5s ease;
-        }
-
-        #prediction-text.visible {
-            opacity: 1;
-            filter: blur(0px);
+            text-shadow: 0 0 10px rgba(255,255,255,0.8);
+            transition: opacity 1s ease;
         }
 
         .hint { 
             position: absolute;
-            bottom: 30px;
-            left: 50%;
-            transform: translateX(-50%);
+            bottom: 40px;
             color: #b3001e; 
             font-weight: 900; 
             text-transform: uppercase; 
-            font-size: 12px;
+            font-size: 13px;
             letter-spacing: 2px;
         }
     </style>
@@ -57,210 +49,166 @@
     </div>
 
     <div id="ballStage">
-        <div id="three-container">
-            <div id="prediction-overlay">
-                <div id="prediction-text">Никуся...</div>
-            </div>
+        <div id="three-container"></div>
+        <div id="prediction-overlay">
+            <div id="prediction-text"></div>
         </div>
-        <p class="hint">Коснись шара, чтобы увидеть мысли</p>
+        <p class="hint">Коснись шара</p>
     </div>
 
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
         const phrases = [
-            "Никусь, ты самая шикарная)",
-            "Никусь, ты самая самая красивая",
-            "Дорогая моя Вероника, ты самая лучшая в мире",
-            "Никуся, ты сегодня лучше, чем вчера, а завтра будешь лучше, чем сегодня)",
-            "Ника, ты прям сияешь",
-            "Никуся, лучше тебя никого не бывает",
-            "Улыбайся почаще, моя дорогая",
-            "Никуся, ты самая идеальная в мире",
-            "Никуся, ты прям как космос - это выше небес",
-            "Никуся, ты бесценна"
+            "Никусь, ты самая шикарная)", "Никусь, ты самая самая красивая",
+            "Дорогая моя Вероника, ты самая лучшая в мире", "Ника, ты прям сияешь",
+            "Никуся, лучше тебя никого не бывает", "Никуся, ты самая идеальная в мире",
+            "Никуся, ты прям как космос - это выше небес", "Никуся, ты бесценна"
         ];
 
-        // --- ЛОГИКА СЕРДЦА ---
+        // --- ЛОГИКА СЕРДЦА (твой оригинал) ---
         const hCanvas = document.getElementById('heartCanvas');
         const hCtx = hCanvas.getContext('2d');
         let hWidth = hCanvas.width = window.innerWidth;
         let hHeight = hCanvas.height = window.innerHeight;
-
         function getHeartPoint(t) {
             let x = 16 * Math.pow(Math.sin(t), 3);
             let y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
             return { x: x * 15, y: -y * 15 };
         }
-
-        class HeartParticle {
+        class HeartPart {
             constructor(t) {
                 this.t = t;
-                this.x = Math.random() * hWidth;
-                this.y = Math.random() * hHeight;
+                this.x = Math.random() * hWidth; this.y = Math.random() * hHeight;
                 const target = getHeartPoint(this.t);
-                this.targetX = target.x + hWidth / 2;
-                this.targetY = target.y + hHeight / 2;
-                this.speed = 0.01 + Math.random() * 0.02;
+                this.targetX = target.x + hWidth / 2; this.targetY = target.y + hHeight / 2;
+                this.speed = 0.02;
             }
             update() {
                 this.x += (this.targetX - this.x) * this.speed;
                 this.y += (this.targetY - this.y) * this.speed;
             }
             draw() {
-                hCtx.font = "bold 14px sans-serif";
-                hCtx.fillStyle = "#ff0000";
+                hCtx.font = "bold 14px sans-serif"; hCtx.fillStyle = "#ff0000";
                 hCtx.fillText("Ника, я тебя люблю", this.x, this.y);
             }
         }
-
         const particles = [];
-        for (let i = 0; i < 100; i++) particles.push(new HeartParticle((i / 100) * Math.PI * 2));
-
+        for (let i = 0; i < 100; i++) particles.push(new HeartPart((i / 100) * Math.PI * 2));
         function animateHeart() {
             if (document.getElementById('heartStage').style.display === 'none') return;
-            hCtx.fillStyle = "#ffc0cb";
-            hCtx.fillRect(0, 0, hWidth, hHeight);
+            hCtx.fillStyle = "#ffc0cb"; hCtx.fillRect(0, 0, hWidth, hHeight);
             particles.forEach(p => { p.update(); p.draw(); });
             requestAnimationFrame(animateHeart);
         }
         animateHeart();
 
         setTimeout(() => {
-            const hStage = document.getElementById('heartStage');
-            const bStage = document.getElementById('ballStage');
-            hStage.style.opacity = '0';
+            document.getElementById('heartStage').style.opacity = '0';
             setTimeout(() => {
-                hStage.style.display = 'none';
-                bStage.style.display = 'flex';
-                setTimeout(() => { bStage.style.opacity = '1'; init3DScene(); }, 50);
+                document.getElementById('heartStage').style.display = 'none';
+                document.getElementById('ballStage').style.display = 'flex';
+                document.getElementById('ballStage').style.opacity = '1';
+                init3D();
             }, 1000);
-        }, 5000);
+        }, 4000);
 
-        // --- 3D МАГИЯ ---
-        function init3DScene() {
-            const container = document.getElementById('three-container');
+        // --- НОВАЯ 3D ЛОГИКА ---
+        function init3D() {
             const scene = new THREE.Scene();
             const camera = new THREE.PerspectiveCamera(45, window.innerWidth / window.innerHeight, 0.1, 1000);
             const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
             renderer.setSize(window.innerWidth, window.innerHeight);
-            container.appendChild(renderer.domElement);
+            document.getElementById('three-container').appendChild(renderer.domElement);
 
-            // 1. МАГИЧЕСКИЙ ШАР
-            const ballGroup = new THREE.Group();
-            const ballGeom = new THREE.SphereGeometry(1.5, 64, 64);
-            const ballMat = new THREE.MeshPhongMaterial({
-                color: 0x800000,
-                specular: 0xffffff,
-                shininess: 100,
-                emissive: 0x330000
-            });
+            // 1. Центральный шар
+            const ballGeom = new THREE.SphereGeometry(1.2, 64, 64);
+            const ballMat = new THREE.MeshPhongMaterial({ color: 0x900000, specular: 0xffffff, shininess: 100 });
             const ball = new THREE.Mesh(ballGeom, ballMat);
-            ballGroup.add(ball);
-            scene.add(ballGroup);
+            scene.add(ball);
 
-            // 2. 3D ОБЛАКО (Бело-голубое)
+            // 2. Реалистичное Облако (Группа частиц)
             const cloudGroup = new THREE.Group();
-            const cloudMat = new THREE.MeshLambertMaterial({
-                color: 0xe0f7ff,
-                transparent: true,
-                opacity: 0, // Изначально невидимо
-                emissive: 0x112233
-            });
-
-            // Создаем форму из сфер
-            const spheres = [
-                { r: 0.8, x: 0, y: 0, z: 0 },
-                { r: 0.6, x: 0.7, y: 0.2, z: 0 },
-                { r: 0.6, x: -0.7, y: 0.1, z: 0 },
-                { r: 0.5, x: 0.3, y: -0.4, z: 0.2 },
-                { r: 0.5, x: -0.4, y: 0.4, z: -0.1 }
+            const cloudPositions = [
+                [0,0,0], [0.5, 0.2, 0.1], [-0.5, 0.1, -0.1], 
+                [0.2, -0.3, 0.2], [-0.2, 0.4, -0.2]
             ];
-
-            spheres.forEach(s => {
-                const g = new THREE.SphereGeometry(s.r, 32, 32);
-                const m = new THREE.Mesh(g, cloudMat);
-                m.position.set(s.x, s.y, s.z);
+            
+            cloudPositions.forEach(pos => {
+                const g = new THREE.SphereGeometry(0.6, 32, 32);
+                const m = new THREE.Mesh(g, new THREE.MeshLambertMaterial({
+                    color: 0xe0f0ff, transparent: true, opacity: 0
+                }));
+                m.position.set(pos[0], pos[1], pos[2]);
                 cloudGroup.add(m);
             });
 
-            cloudGroup.position.set(3, 2, 0); // Справа-сверху
-            cloudGroup.scale.set(0.1, 0.1, 0.1); // Для анимации появления
+            cloudGroup.position.set(2.5, 1.8, 0); // Позиция справа-сверху
             scene.add(cloudGroup);
 
             // Свет
-            const sun = new THREE.DirectionalLight(0xffffff, 1);
-            sun.position.set(5, 5, 5);
-            scene.add(sun);
-            scene.add(new THREE.AmbientLight(0x404040, 0.8));
+            const light = new THREE.DirectionalLight(0xffffff, 1);
+            light.position.set(5, 5, 5); scene.add(light);
+            scene.add(new THREE.AmbientLight(0x404040, 1.2));
 
-            camera.position.z = 8;
+            camera.position.z = 7;
 
-            // Анимация
+            // Связка текста с облаком
+            const overlay = document.getElementById('prediction-overlay');
+            const textElem = document.getElementById('prediction-text');
+
+            function updateTextPos() {
+                const vector = new THREE.Vector3();
+                cloudGroup.getWorldPosition(vector);
+                vector.project(camera);
+                const x = (vector.x * .5 + .5) * window.innerWidth;
+                const y = (vector.y * -.5 + .5) * window.innerHeight;
+                overlay.style.left = `${x}px`;
+                overlay.style.top = `${y}px`;
+            }
+
+            let isRevealed = false;
             function animate() {
                 requestAnimationFrame(animate);
-                ballGroup.rotation.y += 0.005;
-                
-                // Мягкое покачивание облака
-                cloudGroup.position.y = 2 + Math.sin(Date.now() * 0.001) * 0.1;
-                cloudGroup.position.x = 3 + Math.cos(Date.now() * 0.0015) * 0.05;
-                cloudGroup.rotation.z = Math.sin(Date.now() * 0.0005) * 0.05;
-
+                ball.rotation.y += 0.005;
+                cloudGroup.position.y += Math.sin(Date.now() * 0.002) * 0.002; // Дыхание облака
+                updateTextPos();
                 renderer.render(scene, camera);
             }
             animate();
 
-            // Взаимодействие
-            let isAnimating = false;
-            container.onclick = () => {
-                if (isAnimating) return;
-                isAnimating = true;
-
-                const textElem = document.getElementById('prediction-text');
-                textElem.classList.remove('visible');
-
-                // 1. Плавная вибрация шара
-                let start = Date.now();
-                function shakeBall() {
-                    let elapsed = Date.now() - start;
-                    if (elapsed < 1000) {
-                        const intensity = (1000 - elapsed) / 1000; // Затухание
-                        ballGroup.position.x = Math.sin(elapsed * 0.05) * 0.15 * intensity;
-                        ballGroup.position.y = Math.cos(elapsed * 0.06) * 0.1 * intensity;
-                        requestAnimationFrame(shakeBall);
-                    } else {
-                        ballGroup.position.set(0, 0, 0);
-                        showCloud();
-                    }
+            renderer.domElement.onclick = () => {
+                if (isRevealed) {
+                    textElem.style.opacity = '0';
+                    isRevealed = false;
+                    setTimeout(reveal, 500);
+                } else {
+                    reveal();
                 }
-
-                function showCloud() {
-                    // 2. Плавное появление облака
-                    let cloudStart = Date.now();
-                    function expand() {
-                        let e = Date.now() - cloudStart;
-                        if (e < 1200) {
-                            let progress = e / 1200;
-                            cloudMat.opacity = progress * 0.9;
-                            let s = 0.1 + progress * 1.4;
-                            cloudGroup.scale.set(s, s, s);
-                            requestAnimationFrame(expand);
-                        } else {
-                            textElem.innerText = phrases[Math.floor(Math.random() * phrases.length)];
-                            textElem.classList.add('visible');
-                            isAnimating = false;
-                        }
-                    }
-                    expand();
-                }
-
-                shakeBall();
             };
+
+            function reveal() {
+                // Плавная вибрация шара
+                let s = Date.now();
+                const shake = () => {
+                    let e = Date.now() - s;
+                    if (e < 600) {
+                        ball.position.x = Math.sin(e * 0.1) * 0.05 * ((600-e)/600);
+                        requestAnimationFrame(shake);
+                    } else {
+                        ball.position.x = 0;
+                        // Появление облака и текста
+                        cloudGroup.children.forEach(m => m.material.opacity = 0.8);
+                        textElem.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+                        textElem.style.opacity = '1';
+                        isRevealed = true;
+                    }
+                };
+                shake();
+            }
         }
 
-        window.onresize = () => {
-            location.reload(); // Простой способ обновить размеры канваса
-        };
+        window.addEventListener('resize', () => { location.reload(); });
     </script>
 </body>
 </html>
