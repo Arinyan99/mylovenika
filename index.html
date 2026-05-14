@@ -224,4 +224,43 @@
                 function shakeBall() {
                     let elapsed = Date.now() - start;
                     if (elapsed < 1000) {
-                        const intensity = (1000 - elapsed) / 1000;
+                        const intensity = (1000 - elapsed) / 1000; // Затухание
+                        ballGroup.position.x = Math.sin(elapsed * 0.05) * 0.15 * intensity;
+                        ballGroup.position.y = Math.cos(elapsed * 0.06) * 0.1 * intensity;
+                        requestAnimationFrame(shakeBall);
+                    } else {
+                        ballGroup.position.set(0, 0, 0);
+                        showCloud();
+                    }
+                }
+
+                function showCloud() {
+                    // 2. Плавное появление облака
+                    let cloudStart = Date.now();
+                    function expand() {
+                        let e = Date.now() - cloudStart;
+                        if (e < 1200) {
+                            let progress = e / 1200;
+                            cloudMat.opacity = progress * 0.9;
+                            let s = 0.1 + progress * 1.4;
+                            cloudGroup.scale.set(s, s, s);
+                            requestAnimationFrame(expand);
+                        } else {
+                            textElem.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+                            textElem.classList.add('visible');
+                            isAnimating = false;
+                        }
+                    }
+                    expand();
+                }
+
+                shakeBall();
+            };
+        }
+
+        window.onresize = () => {
+            location.reload(); // Простой способ обновить размеры канваса
+        };
+    </script>
+</body>
+</html>
