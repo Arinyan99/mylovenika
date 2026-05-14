@@ -5,73 +5,143 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Для Ники</title>
     <style>
-        body { margin: 0; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
-        canvas { position: absolute; top: 0; left: 0; }
-        .msg { color: #ff0032; font-family: 'Arial', sans-serif; font-size: 24px; z-index: 10; pointer-events: none; text-shadow: 0 0 15px #ff0032; text-align: center; max-width: 80%; }
+        /* 1. РОЗОВЫЙ ГРАДИЕНТНЫЙ ФОН */
+        body { 
+            margin: 0; 
+            /* Мягкий переход от темно-розового в черный */
+            background: radial-gradient(circle, rgba(75,0,25,1) 0%, rgba(0,0,0,1) 80%);
+            overflow: hidden; 
+            display: flex; 
+            justify-content: center; 
+            align-items: center; 
+            height: 100vh; 
+            position: relative; /* Чтобы canvas не перекрывал всё */
+        }
+        
+        canvas { 
+            position: absolute; 
+            top: 0; 
+            left: 0; 
+            z-index: 1; /* Анимация будет сзади */
+        }
+        
+        /* 2. ОТЦЕНТРИРОВАННЫЙ, ЧИТАЕМЫЙ ТЕКСТ */
+        .msg-container {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            width: 100%;
+            height: 100%;
+            position: absolute;
+            z-index: 10; /* Текст будет сверху */
+            pointer-events: none; /* Чтобы не мешал анимации */
+        }
+
+        .msg { 
+            color: #ff0032; 
+            font-family: 'Arial', sans-serif; 
+            font-size: 28px; 
+            font-weight: bold;
+            text-shadow: 0 0 15px #ff0032; 
+            text-align: center; 
+            max-width: 80%;
+            
+            /* Мягкая черная подложка для читаемости */
+            background: rgba(0, 0, 0, 0.6);
+            padding: 20px 30px;
+            border-radius: 15px;
+            box-shadow: 0 0 30px rgba(0, 0, 0, 0.5);
+            line-height: 1.4;
+        }
     </style>
 </head>
 <body>
-    <div class="msg">Ника, я тебя люблю</div>
+    <div class="msg-container">
+        <div class="msg">Ника, я тебя люблю</div>
+    </div>
+    
     <canvas id="heart"></canvas>
 
     <script>
         const canvas = document.getElementById('heart');
         const ctx = canvas.getContext('2d');
-        let width = canvas.width = window.innerWidth;
-        let height = canvas.height = window.innerHeight;
+        let width, height;
+
+        // Автоматический ресайз под размер экрана
+        function resize() {
+            width = canvas.width = window.innerWidth;
+            height = canvas.height = window.innerHeight;
+            // Пересоздаем частицы, если экран изменился
+            points.length = 0;
+            createParticles();
+        }
 
         const points = [];
-        const words = ['Ника', 'любовь', 'моя', 'навсегда', 'солнце', 'космос', 'рядом', 'ты', 'сердце', 'я'];
+        const words = ['Ника', 'любовь', 'моя', 'навсегда', 'солнце', 'космос', 'рядом', 'ты', 'сердце'];
 
         // Форма сердца
         function getHeartPoint(t) {
             let x = 16 * Math.pow(Math.sin(t), 3);
             let y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
-            // Масштабируем
-            return { x: x * 15, y: -y * 15 };
+            // Немного уменьшим масштаб сердца, чтобы оно не было огромным на телефоне
+            return { x: x * 13, y: -y * 13 };
         }
 
         class Particle {
             constructor() {
-                // Выбираем точку *внутри* сердца (а не на контуре)
                 const t = Math.random() * Math.PI * 2;
-                // randomizing distance from center within the heart contour
                 const r = Math.sqrt(Math.random());
                 const contour = getHeartPoint(t);
                 
                 this.x = Math.random() * width;
                 this.y = Math.random() * height;
+                // Всегда целимся ровно в центр
                 this.targetX = (contour.x * r) + width / 2;
                 this.targetY = (contour.y * r) + height / 2;
                 
-                // СДЕЛАНО МЕДЛЕННЕЕ: скорость уменьшена
-                this.speed = 0.005 + Math.random() * 0.01;
+                // Скорость оставили медленной, как ты просил
+                this.speed = 0.006 + Math.random() * 0.012;
                 
                 this.word = words[Math.floor(Math.random() * words.length)];
-                this.size = Math.random() * 8 + 6;
-                // Немного прозрачности для мягкости
-                this.opacity = Math.random() * 0.5 + 0.3; 
+                
+                // 3. УМЕНЬШИЛИ РАЗМЕР СЛОВ в анимации (от 4 до 9px)
+                this.size = Math.random() * 5 + 4; 
+                this.opacity = Math.random() * 0.4 + 0.2; // еще мягче
             }
             draw() {
                 // Плавное движение
                 this.x += (this.targetX - this.x) * this.speed;
                 this.y += (this.targetY - this.y) * this.speed;
                 
-                // Рисуем слово
-                ctx.fillStyle = `rgba(255, 0, 50, ${this.opacity})`; // чуть мягче цвет
-                ctx.font = `${this.size}px Arial`;
-                ctx.fillText(this.word, this.x, this.y);
+                // 4. КОНТРОЛЬ СЛИЯНИЯ СЛОВ
+                // Проверяем, не слишком ли близко другие частицы, 
+                // если близко — то рисуем реже (простой трюк для разрежения)
+                if (Math.random() > 0.05) { // рисуем только 95% кадров
+                    ctx.fillStyle = `rgba(255, 0, 50, ${this.opacity})`;
+                    ctx.font = `${this.size}px Arial`;
+                    ctx.fillText(this.word, this.x, this.y);
+                }
             }
         }
 
-        // Больше частиц, чтобы заполнить объем
-        const particleCount = 450;
-        for (let i = 0; i < particleCount; i++) points.push(new Particle());
+        function createParticles() {
+            const particleCount = 350; // Меньше частиц, чтобы не было каши
+            for (let i = 0; i < particleCount; i++) points.push(new Particle());
+        }
+
+        window.addEventListener('resize', resize);
+        resize(); // первый запуск
 
         function animate() {
-            // Оставляем длинный след для мягкости
+            // Фон canvas прозрачный, чтобы было видно розовый градиент body
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.04)'; // чуть длиннее шлейф для мягкости
+            ctx.clearRect(0, 0, canvas.width, canvas.height); // полностью очищаем canvas, чтобы не наслаивать слова
+            
+            // Вместо fillRect, используем мягкую подложку в draw(), 
+            // но для canvas нужен фон, чтобы скрыть старые шлейфы
             ctx.fillStyle = 'rgba(0, 0, 0, 0.03)';
-            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            ctx.fillRect(0, 0, width, height);
+            
             points.forEach(p => p.draw());
             requestAnimationFrame(animate);
         }
