@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>For You</title>
+    <style>
+        body { margin: 0; background: #000; overflow: hidden; display: flex; justify-content: center; align-items: center; height: 100vh; }
+        canvas { position: absolute; top: 0; left: 0; }
+        .msg { color: #ff0032; font-family: 'Arial', sans-serif; font-size: 20px; z-index: 10; pointer-events: none; text-shadow: 0 0 10px #ff0032; }
+    </style>
+</head>
+<body>
+    <div class="msg">I LOVE YOU</div>
+    <canvas id="heart"></canvas>
+
+    <script>
+        const canvas = document.getElementById('heart');
+        const ctx = canvas.getContext('2d');
+        canvas.width = window.innerWidth;
+        canvas.height = window.innerHeight;
+
+        const points = [];
+        const words = ['love', 'forever', 'you', 'my space'];
+
+        function getHeartPoint(t) {
+            let x = 16 * Math.pow(Math.sin(t), 3);
+            let y = 13 * Math.cos(t) - 5 * Math.cos(2 * t) - 2 * Math.cos(3 * t) - Math.cos(4 * t);
+            return { x: x * 15, y: -y * 15 };
+        }
+
+        class Particle {
+            constructor() {
+                this.t = Math.random() * Math.PI * 2;
+                const target = getHeartPoint(this.t);
+                this.x = Math.random() * canvas.width;
+                this.y = Math.random() * canvas.height;
+                this.targetX = target.x + canvas.width / 2;
+                this.targetY = target.y + canvas.height / 2;
+                this.speed = 0.02 + Math.random() * 0.03;
+                this.word = words[Math.floor(Math.random() * words.length)];
+                this.size = Math.random() * 10 + 5;
+            }
+            draw() {
+                this.x += (this.targetX - this.x) * this.speed;
+                this.y += (this.targetY - this.y) * this.speed;
+                ctx.fillStyle = '#ff0032';
+                ctx.font = `${this.size}px Arial`;
+                ctx.fillText(this.word, this.x, this.y);
+            }
+        }
+
+        for (let i = 0; i < 250; i++) points.push(new Particle());
+
+        function animate() {
+            ctx.fillStyle = 'rgba(0, 0, 0, 0.1)';
+            ctx.fillRect(0, 0, canvas.width, canvas.height);
+            points.forEach(p => p.draw());
+            requestAnimationFrame(animate);
+        }
+        animate();
+    </script>
+</body>
+</html>
