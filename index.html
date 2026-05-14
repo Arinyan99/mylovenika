@@ -124,3 +124,108 @@
 
         class Particle {
             constructor(t) {
+                this.t = t;
+                this.x = Math.random() * hWidth;
+                this.y = Math.random() * hHeight;
+                const target = getHeartPoint(this.t);
+                this.targetX = target.x + hWidth / 2;
+                this.targetY = target.y + hHeight / 2;
+                this.speed = 0.01 + Math.random() * 0.02;
+            }
+            update() {
+                this.x += (this.targetX - this.x) * this.speed;
+                this.y += (this.targetY - this.y) * this.speed;
+            }
+            draw() {
+                hCtx.font = "bold 14px sans-serif";
+                hCtx.fillStyle = "#ff0000";
+                hCtx.textAlign = "center";
+                hCtx.fillText("Ника, я тебя люблю", this.x, this.y);
+            }
+        }
+
+        const particles = [];
+        for (let i = 0; i < 100; i++) particles.push(new Particle((i / 100) * Math.PI * 2));
+
+        function animateHeart() {
+            if (document.getElementById('heartStage').style.display === 'none') return;
+            hCtx.fillStyle = "#ffc0cb";
+            hCtx.fillRect(0, 0, hWidth, hHeight);
+            particles.forEach(p => { p.update(); p.draw(); });
+            requestAnimationFrame(animateHeart);
+        }
+        animateHeart();
+
+        setTimeout(() => {
+            const hStage = document.getElementById('heartStage');
+            const bStage = document.getElementById('ballStage');
+            hStage.style.opacity = '0';
+            setTimeout(() => {
+                hStage.style.display = 'none';
+                bStage.style.display = 'flex';
+                setTimeout(() => { bStage.style.opacity = '1'; init3D(); }, 50);
+            }, 1000);
+        }, 5000);
+
+        // --- 3D И ОБЛАКО ---
+        function init3D() {
+            const container = document.getElementById('three-canvas-container');
+            const scene = new THREE.Scene();
+            const camera = new THREE.PerspectiveCamera(45, 1, 0.1, 1000);
+            const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
+            renderer.setSize(400, 400);
+            container.appendChild(renderer.domElement);
+
+            // Шар
+            const geometry = new THREE.SphereGeometry(2, 64, 64);
+            const material = new THREE.MeshPhongMaterial({
+                color: 0x900000,
+                specular: 0x666666,
+                shininess: 100,
+                emissive: 0x220000
+            });
+            const ball = new THREE.Mesh(geometry, material);
+            scene.add(ball);
+
+            // Освещение
+            const light = new THREE.PointLight(0xffffff, 1.2);
+            light.position.set(5, 5, 5);
+            scene.add(light);
+            scene.add(new THREE.AmbientLight(0x404040));
+
+            camera.position.z = 6;
+
+            function animate() {
+                requestAnimationFrame(animate);
+                ball.rotation.y += 0.005;
+                renderer.render(scene, camera);
+            }
+            animate();
+
+            // Клик
+            container.style.cursor = "pointer";
+            container.onclick = () => {
+                const cloud = document.getElementById('cloud-message');
+                const text = document.getElementById('prediction-text');
+                
+                cloud.classList.remove('visible');
+                
+                // Тряска шара
+                let start = Date.now();
+                function shake() {
+                    let elapsed = Date.now() - start;
+                    if (elapsed < 500) {
+                        ball.position.x = Math.sin(elapsed * 0.1) * 0.1;
+                        requestAnimationFrame(shake);
+                    } else {
+                        ball.position.x = 0;
+                        text.innerText = phrases[Math.floor(Math.random() * phrases.length)];
+                        cloud.classList.add('visible');
+                    }
+                }
+                shake();
+            };
+        }
+    </script>
+</body>
+</html>
