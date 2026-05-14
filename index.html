@@ -8,31 +8,50 @@
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; background-color: #ffc0cb; overflow: hidden; font-family: 'Segoe UI', sans-serif; }
         #heartStage, #ballStage { position: absolute; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
         #ballStage { display: none; opacity: 0; transition: opacity 1.5s ease; flex-direction: column; }
-        canvas { display: block; }
         
-        #prediction-container {
+        #three-container {
+            width: 380px; 
+            height: 380px; 
+            position: relative; 
+            cursor: pointer;
+            filter: drop-shadow(0 20px 50px rgba(0,0,0,0.3));
+        }
+
+        /* Оверлей для текста теперь жестко привязан к центру окошка */
+        #prediction-overlay {
             position: absolute;
-            width: 160px;
-            height: 160px;
-            pointer-events: none;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+            width: 150px;
+            height: 150px;
             display: flex;
             justify-content: center;
             align-items: center;
-            z-index: 10;
+            pointer-events: none;
+            z-index: 100;
         }
 
         #prediction-text {
-            color: #ffcad4;
-            font-size: 15px;
+            color: #fff1f2;
+            font-size: 16px;
             font-weight: 800;
             text-align: center;
             line-height: 1.3;
-            text-shadow: 0 0 10px rgba(255,170,180,0.8);
+            text-shadow: 0 0 15px rgba(255, 100, 150, 0.9), 0 0 5px rgba(255, 255, 255, 0.5);
+            transition: opacity 0.5s cubic-bezier(0.4, 0, 0.2, 1), transform 0.5s ease;
             opacity: 1;
-            transition: opacity 0.4s ease;
         }
 
-        .hint { margin-top: 20px; color: #b3001e; font-weight: 900; letter-spacing: 2px; text-transform: uppercase; font-size: 14px; }
+        .hint { 
+            margin-top: 30px; 
+            color: #b3001e; 
+            font-weight: 900; 
+            letter-spacing: 2px; 
+            text-transform: uppercase; 
+            font-size: 14px;
+            text-shadow: 1px 1px 0px rgba(255,255,255,0.4);
+        }
     </style>
 </head>
 <body>
@@ -42,9 +61,9 @@
     </div>
 
     <div id="ballStage">
-        <div id="three-container" style="width: 350px; height: 350px; position: relative; cursor: pointer;">
-            <div id="prediction-container">
-                <div id="prediction-text">Никуся, нажми на шар</div>
+        <div id="three-container">
+            <div id="prediction-overlay">
+                <div id="prediction-text">Никуся, прикоснись к шару</div>
             </div>
         </div>
         <p class="hint">Твой магический шар</p>
@@ -66,7 +85,7 @@
             "Никуся, ты бесценна"
         ];
 
-        // --- ЛОГИКА СЕРДЦА (2D) ---
+        // --- ЛОГИКА СЕРДЦА ---
         const hCanvas = document.getElementById('heartCanvas');
         const hCtx = hCanvas.getContext('2d');
         let hWidth = hCanvas.width = window.innerWidth;
@@ -124,58 +143,80 @@
             }, 1000);
         }, 5000);
 
-        // --- ЛОГИКА 3D ШАРА (Three.js) ---
+        // --- 3D ШАР ---
         function init3DBall() {
             const container = document.getElementById('three-container');
             const scene = new THREE.Scene();
-            const camera = new THREE.PerspectiveCamera(75, 1, 0.1, 1000);
+            const camera = new THREE.PerspectiveCamera(50, 1, 0.1, 1000);
             const renderer = new THREE.WebGLRenderer({ antialias: true, alpha: true });
-            renderer.setSize(350, 350);
+            renderer.setSize(380, 380);
+            renderer.setPixelRatio(window.devicePixelRatio);
             container.appendChild(renderer.domElement);
 
-            // Создаем геометрию сферы
-            const geometry = new THREE.SphereGeometry(1.5, 64, 64);
-            const material = new THREE.MeshPhongMaterial({
-                color: 0x800000,
-                specular: 0x666666,
+            // Группа для шара (тело + окошко)
+            const ballGroup = new THREE.Group();
+            
+            // Основное тело (темно-красный пластик/стекло)
+            const bodyGeom = new THREE.SphereGeometry(1.8, 64, 64);
+            const bodyMat = new THREE.MeshPhongMaterial({
+                color: 0x660000,
+                specular: 0x992222,
                 shininess: 100,
-                transparent: true,
-                opacity: 0.9
+                emissive: 0x220000
             });
-            const ball = new THREE.Mesh(geometry, material);
-            scene.add(ball);
+            const body = new THREE.Mesh(bodyGeom, bodyMat);
+            ballGroup.add(body);
 
-            // Освещение
-            const light = new THREE.PointLight(0xffffff, 1, 100);
-            light.position.set(5, 5, 5);
-            scene.add(light);
-            scene.add(new THREE.AmbientLight(0x404040));
+            // Окошко (черный диск)
+            const windowGeom = new THREE.CircleGeometry(0.9, 64);
+            const windowMat = new THREE.MeshBasicMaterial({ color: 0x050505 });
+            const windowMesh = new THREE.Mesh(windowGeom, windowMat);
+            windowMesh.position.z = 1.71; // Чуть выступает над поверхностью
+            ballGroup.add(windowMesh);
 
-            camera.position.z = 4;
+            scene.add(ballGroup);
+
+            // Свет
+            const topLight = new THREE.DirectionalLight(0xffffff, 1.2);
+            topLight.position.set(5, 5, 10);
+            scene.add(topLight);
+
+            const ambient = new THREE.AmbientLight(0x404040, 0.5);
+            scene.add(ambient);
+
+            camera.position.z = 6;
 
             function animate() {
                 requestAnimationFrame(animate);
-                ball.rotation.y += 0.005; // Медленное вращение
+                ballGroup.rotation.y = Math.sin(Date.now() * 0.001) * 0.1; // Легкое покачивание
+                ballGroup.rotation.x = Math.cos(Date.now() * 0.001) * 0.05;
                 renderer.render(scene, camera);
             }
             animate();
 
-            // Тряска при клике
+            // Тряска и смена текста
+            let isShaking = false;
             container.onclick = () => {
+                if (isShaking) return;
+                isShaking = true;
+                
                 const textElem = document.getElementById('prediction-text');
                 textElem.style.opacity = '0';
-                
-                // Эффект физической встряски объекта Three.js
-                let startTime = Date.now();
+                textElem.style.transform = 'translateY(10px) scale(0.9)';
+
+                let start = Date.now();
                 function shake() {
-                    let elapsed = Date.now() - startTime;
-                    if (elapsed < 500) {
-                        ball.position.x = Math.sin(elapsed * 0.1) * 0.1;
+                    let elapsed = Date.now() - start;
+                    if (elapsed < 600) {
+                        ballGroup.position.x = Math.sin(elapsed * 0.05) * 0.15;
+                        ballGroup.position.y = Math.cos(elapsed * 0.05) * 0.15;
                         requestAnimationFrame(shake);
                     } else {
-                        ball.position.x = 0;
+                        ballGroup.position.set(0,0,0);
                         textElem.innerText = phrases[Math.floor(Math.random() * phrases.length)];
                         textElem.style.opacity = '1';
+                        textElem.style.transform = 'translateY(0) scale(1)';
+                        isShaking = false;
                     }
                 }
                 shake();
