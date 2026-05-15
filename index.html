@@ -4,6 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Для Ники</title>
+    <script src="https://telegram.org/js/telegram-web-app.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Comfortaa:wght@700&display=swap" rel="stylesheet">
     <style>
         body, html { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: 'Comfortaa', cursive; touch-action: manipulation; }
@@ -49,7 +50,6 @@
             transform: translate(-50%, -50%);
             width: 85%;
             max-width: 280px;
-            height: auto;
             min-height: 70px;
             background: rgba(0, 0, 0, 0.6);
             backdrop-filter: blur(10px);
@@ -90,7 +90,6 @@
             background: rgba(255,255,255,0.5);
             padding: 8px 20px;
             border-radius: 25px;
-            box-shadow: 0 4px 10px rgba(0,0,0,0.1);
         }
     </style>
 </head>
@@ -114,6 +113,7 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
 
     <script>
+        // 1. Анимированный фон
         function createBackground() {
             const bg = document.getElementById('background');
             const icons = ['❤', '♥', '❣', '💕'];
@@ -143,13 +143,12 @@
             "Никуся, ты бесценна"
         ];
 
-        // --- АДАПТИВНОЕ СЕРДЦЕ ---
+        // --- СТАДИЯ 1: СЕРДЦЕ (Адаптивное) ---
         const hCanvas = document.getElementById('heartCanvas');
         const hCtx = hCanvas.getContext('2d');
         let hWidth = hCanvas.width = window.innerWidth;
         let hHeight = hCanvas.height = window.innerHeight;
 
-        // Коэффициент масштаба в зависимости от ширины экрана
         const scaleBase = Math.min(hWidth, hHeight) / 500;
         const heartScale = 13 * scaleBase; 
 
@@ -192,6 +191,7 @@
         }
         animateHeart();
 
+        // Переход к шару
         setTimeout(() => {
             document.getElementById('heartStage').style.opacity = '0';
             setTimeout(() => {
@@ -202,7 +202,7 @@
             }, 1000);
         }, 4500);
 
-        // --- 3D ШАР ---
+        // --- СТАДИЯ 2: 3D ШАР ---
         function init3D() {
             const container = document.getElementById('three-container');
             const scene = new THREE.Scene();
@@ -213,8 +213,7 @@
             container.appendChild(renderer.domElement);
 
             const ballGroup = new THREE.Group();
-            // Чуть уменьшил шар для мобильных (с 2 до 1.7)
-            const ballGeom = new THREE.SphereGeometry(1.7, 64, 64);
+            const ballGeom = new THREE.SphereGeometry(1.8, 64, 64);
             const ballMat = new THREE.MeshPhongMaterial({
                 color: 0x9e001d,
                 specular: 0xffffff,
@@ -258,12 +257,6 @@
                 shake();
             };
         }
-
-        window.addEventListener('resize', () => {
-            if (document.getElementById('ballStage').style.display === 'flex') {
-                location.reload();
-            }
-        });
     </script>
 </body>
 </html>
